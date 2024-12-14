@@ -51,6 +51,10 @@ const HomePage: React.FC = () => {
     setSearchQuery(e.target.value); // Update search query immediately as user types
   };
 
+  const handleDelete = (postId: string) => {
+    setPosts((prevPosts) => prevPosts.filter((post) => post._id !== postId));
+  };
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
@@ -88,7 +92,7 @@ const HomePage: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {posts.map((post) => (
-            <PostCard key={post._id} post={post} />
+            <PostCard key={post._id} post={post} onDelete={handleDelete}/>
           ))}
         </div>
       )}
