@@ -60,7 +60,7 @@ const HomePage: React.FC = () => {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0">
-          <h1 className="text-3xl font-extrabold text-gray-900">Discover Posts</h1>
+          <h1 className="text-3xl font-extrabold text-gray-900">Skibidi re blogs</h1>
           {isAuthenticated() && (
             <button
               className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"

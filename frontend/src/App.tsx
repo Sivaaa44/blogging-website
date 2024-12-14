@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import CreatePostPage from './pages/CreatePostPage';
 import EditPostPage from './pages/EditPostPage';
+import PostPage from './components/PostPage';
 
 const App: React.FC = () => {
   return (
@@ -14,9 +15,12 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/home" element={<HomePage/>}/>
-          <Route path="/create-post" element={<CreatePostPage/>} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/create-post" element={<CreatePostPage />} />
           <Route path="/edit-post/:id" element={<EditPostPage />} />
+          <Route path="/post/:id" element={
+            <PostPage />
+          } />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
