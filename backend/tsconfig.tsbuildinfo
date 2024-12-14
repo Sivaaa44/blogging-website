@@ -1,0 +1,1 @@
+{"root":["./src/app.ts","./src/server.ts","./src/config/db.ts","./src/controllers/authcontroller.ts","./src/controllers/postcontroller.ts","./src/middlewares/authmiddleware.ts","./src/models/post.ts","./src/models/user.ts","./src/routes/authroutes.ts","./src/routes/postrouter.ts","./src/utils/config.ts"],"version":"5.7.2"}
