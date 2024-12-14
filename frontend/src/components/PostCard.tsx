@@ -48,7 +48,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onDelete }) => {
         <p className="text-gray-500">
           By {post.author.username} - {new Date(post.createdAt!).toLocaleDateString()}
         </p>
-        {user && user.id === post.author.id && (
+        {user && user.username === post.author.username && (
           <div className="space-x-2">
             <button
               className="text-red-500 hover:text-red-700 transition-colors"
