@@ -24,6 +24,7 @@ const PostPage: React.FC = () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
+          navigate('/login');
           throw new Error('Authentication token not found. Please log in again.');
         }
 
