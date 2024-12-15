@@ -6,7 +6,7 @@ import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import CreatePostPage from './pages/CreatePostPage';
 import EditPostPage from './pages/EditPostPage';
-import PostPage from './components/PostPage';
+import PostPage from './pages/PostPage';
 
 const App: React.FC = () => {
   return (
