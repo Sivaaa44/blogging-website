@@ -1,7 +1,7 @@
 import express, { Router } from 'express';
 import Post from '../models/Post'; 
 import { authMiddleware } from '../middlewares/authMiddleware';
-import { createPost, deletePost, getAllPosts, getPostById, getPostByTag, searchPost, updatePost } from '../controllers/postController';
+import { createPost, deletePost, getAllPosts, getPostById, getPostByTag, getPostByUser, searchPost, updatePost } from '../controllers/postController';
 import { get } from 'http';
 
 const postRouter = Router();
@@ -14,6 +14,8 @@ postRouter.delete('/:id', authMiddleware, deletePost);
 postRouter.get('/tags/:tag', authMiddleware, getPostByTag);
 postRouter.get('/tags', getAllPosts);
 postRouter.get('/search/:query', searchPost);
+postRouter.get('/user/posts/:userID', authMiddleware, getPostByUser);
+
 
 
 export default postRouter;

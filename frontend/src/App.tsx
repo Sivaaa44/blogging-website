@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage';
 import CreatePostPage from './pages/CreatePostPage';
 import EditPostPage from './pages/EditPostPage';
 import PostPage from './pages/PostPage';
+import MyBlogsPage from './pages/MyBlogsPage';
 
 const App: React.FC = () => {
   return (
@@ -21,6 +22,7 @@ const App: React.FC = () => {
           <Route path="/post/:id" element={
             <PostPage />
           } />
+          <Route path="/my-blogs" element={<MyBlogsPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

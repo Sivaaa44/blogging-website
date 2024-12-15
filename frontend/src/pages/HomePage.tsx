@@ -5,6 +5,7 @@ import { Post } from '../types/post';
 import PostCard from '../components/PostCard';
 import { useAuth } from '../context/AuthContext';
 import { Search, Plus, AlertTriangle } from 'lucide-react';
+import ProfileDropdown from '../components/ProfileDropdown';
 
 const HomePage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
@@ -13,7 +14,7 @@ const HomePage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState(searchQuery);
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   // Debounce Effect
   useEffect(() => {
@@ -61,15 +62,20 @@ const HomePage: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0">
           <h1 className="text-3xl font-extrabold text-gray-900">Skibidi re blogs</h1>
-          {isAuthenticated() && (
-            <button
-              className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
-              onClick={() => navigate('/create-post')}
-            >
-              <Plus size={20} />
-              <span>Create Post</span>
-            </button>
-          )}
+          <div className="flex items-center space-x-4">
+            {isAuthenticated() && (
+              <>
+                <button
+                  className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
+                  onClick={() => navigate('/create-post')}
+                >
+                  <Plus size={20} />
+                  <span>Create Post</span>
+                </button>
+                {user && <ProfileDropdown user={user} />}
+              </>
+            )}
+          </div>
         </div>
 
         {/* Search Bar */}
