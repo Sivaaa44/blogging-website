@@ -123,7 +123,7 @@ export const searchPost  = async(req :any , res : Response) => {
 
 export const getPostByUser = async(req: any, res: Response) => {
     try {
-        const userId = req.params.userId || req.user.id; 
+        const {userId} = req.params || req.user.id; 
         const posts = await Post.find({ author: userId }).populate('author', 'username');
         console.log(posts);
     

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Post } from '../types/post';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Trash2, Edit, BookOpen, Calendar, ChevronRight } from 'lucide-react';
+import { Trash2, Edit, BookOpen, Calendar, ChevronRight, Hash, MessageCircle } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 interface PostCardProps {
   post: Post;
@@ -20,7 +21,10 @@ const PostCard: React.FC<PostCardProps> = ({
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this post?')) return;
+
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -42,7 +46,8 @@ const PostCard: React.FC<PostCardProps> = ({
     }
   };
 
-  const handleEdit = () => {
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
     navigate(`/edit-post/${post._id}`);
   };
 
@@ -50,33 +55,48 @@ const PostCard: React.FC<PostCardProps> = ({
     navigate(`/post/${post._id}`);
   };
 
-  // Generate a dynamic background color based on the author's username
   const getAuthorColor = () => {
     const colors = [
-      'bg-blue-100', 'bg-green-100', 'bg-purple-100', 
-      'bg-pink-100', 'bg-indigo-100', 'bg-teal-100'
+      'bg-blue-100 text-blue-800', 
+      'bg-emerald-100 text-emerald-800', 
+      'bg-purple-100 text-purple-800', 
+      'bg-rose-100 text-rose-800', 
+      'bg-indigo-100 text-indigo-800', 
+      'bg-amber-100 text-amber-800'
     ];
     const index = post.author.username.charCodeAt(0) % colors.length;
     return colors[index];
   };
 
-  // Truncate content based on variant
   const getTruncatedContent = () => {
-    const maxLength = variant === 'compact' ? 50 : 150;
-    return post.content.length > maxLength 
-      ? `${post.content.slice(0, maxLength)}...` 
-      : post.content;
+    // Create a temporary div to strip HTML tags for length calculation
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = DOMPurify.sanitize(post.content);
+    const textContent = tempDiv.textContent || tempDiv.innerText;
+    
+    const maxLength = variant === 'compact' ? 80 : 200;
+    let truncated = textContent.slice(0, maxLength);
+    
+    if (textContent.length > maxLength) {
+      truncated += '...';
+    }
+    
+    return truncated;
   };
 
-  // Format date with more flexibility
   const formatDate = () => {
     const date = new Date(post.createdAt!);
     const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 3600 * 24));
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
     
     return date.toLocaleDateString('en-US', {
       month: 'short',
@@ -88,85 +108,50 @@ const PostCard: React.FC<PostCardProps> = ({
   return (
     <div 
       className={`
-        relative group overflow-hidden rounded-3xl 
-        transition-all duration-300 ease-in-out 
-        ${variant === 'compact' 
-          ? 'h-48 min-w-[250px]' 
-          : 'min-h-[380px] max-w-[400px]'}
-        bg-white border border-gray-200 shadow-lg 
-        hover:shadow-2xl cursor-pointer transform 
-        hover:-translate-y-2 hover:scale-[1.02]
+        group relative overflow-hidden rounded-2xl
+        transition-all duration-300 ease-out
+        ${variant === 'compact' ? 'h-48' : 'h-[420px]'}
+        bg-white border border-slate-200
+        hover:border-slate-300 hover:shadow-lg
+        cursor-pointer
       `}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleCardClick}
     >
-      {/* Gradient Overlay */}
-      <div 
-        className={`
-          absolute inset-0 
-          bg-gradient-to-br from-transparent to-blue-50 
-          opacity-0 group-hover:opacity-50 
-          transition-opacity duration-300 
-          pointer-events-none
-        `}
-      />
+      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-slate-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-      <div 
-        className={`
-          relative z-10 p-5 
-          flex flex-col 
-          ${variant === 'compact' ? 'h-full' : 'h-full'}
-        `}
-      >
-        {/* Header */}
-        <div className="flex justify-between items-start mb-3">
-          <h2 
-            className={`
-              font-bold text-gray-800 
-              group-hover:text-blue-700 
-              transition-colors 
+      <div className="relative h-full p-6 flex flex-col">
+        {/* Header Section */}
+        <div className="flex justify-between items-start space-x-4 mb-4">
+          <div className="flex-1">
+            <h2 className={`
+              font-bold text-slate-900 
+              group-hover:text-indigo-600 
+              transition-colors duration-300
               ${variant === 'compact' ? 'text-lg' : 'text-2xl'}
-            `}
-          >
-            {post.title}
-          </h2>
+              line-clamp-2
+            `}>
+              {post.title}
+            </h2>
+          </div>
 
-          {/* Action Buttons */}
           {user && user.username === post.author.username && (
-            <div 
-              className={`
-                flex space-x-2 
-                ${isHovered ? 'opacity-100' : 'opacity-0'}
-                transition-all duration-300
-              `}
-            >
+            <div className={`
+              flex space-x-2 
+              ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}
+              transition-all duration-300
+            `}>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDelete();
-                }}
-                className="
-                  bg-red-50 text-red-500 
-                  hover:bg-red-100 p-2 
-                  rounded-full transition-all 
-                  shadow-md hover:shadow-lg
-                "
+                onClick={handleDelete}
+                className="p-2 rounded-full bg-rose-50 text-rose-500 hover:bg-rose-100 hover:text-rose-600 transition-colors"
                 title="Delete Post"
               >
                 <Trash2 size={18} />
               </button>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEdit();
-                }}
-                className="
-                  bg-blue-50 text-blue-500 
-                  hover:bg-blue-100 p-2 
-                  rounded-full transition-all 
-                  shadow-md hover:shadow-lg
-                "
+                onClick={handleEdit}
+                className="p-2 rounded-full bg-indigo-50 text-indigo-500 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
                 title="Edit Post"
               >
                 <Edit size={18} />
@@ -175,69 +160,67 @@ const PostCard: React.FC<PostCardProps> = ({
           )}
         </div>
 
-        {/* Content */}
-        <p 
-          className={`
-            text-gray-600 mb-4 
-            ${variant === 'compact' 
-              ? 'text-sm line-clamp-2' 
-              : 'text-base line-clamp-3 flex-grow'}
-          `}
-        >
-          {getTruncatedContent()}
-        </p>
-
-        {/* Footer */}
-        <div 
-          className={`
-            flex items-center justify-between 
-            mt-auto pb-2 
-            ${variant === 'compact' ? 'text-xs' : 'text-sm'}
-          `}
-        >
-          {/* Author */}
-          <div className="flex items-center space-x-2">
-            <div 
-              className={`
-                ${getAuthorColor()} 
-                text-blue-800 rounded-full 
-                flex items-center justify-center 
-                font-bold shadow-md 
-                ${variant === 'compact' ? 'w-8 h-8' : 'w-10 h-10'}
-              `}
-            >
-              {post.author.username[0].toUpperCase()}
-            </div>
-            <span className="font-semibold text-gray-700">
-              {post.author.username}
-            </span>
-          </div>
-
-          {/* Date */}
-          <div className="flex items-center space-x-1 text-gray-500">
-            <Calendar className={variant === 'compact' ? 'w-3 h-3' : 'w-4 h-4'} />
-            <time dateTime={post.createdAt} className="font-medium">
-              {formatDate()}
-            </time>
-          </div>
+        {/* Content Preview */}
+        <div className="mb-4 flex-1">
+          <p className={`
+            text-slate-600
+            ${variant === 'compact' ? 'text-sm line-clamp-2' : 'text-base line-clamp-4'}
+          `}>
+            {getTruncatedContent()}
+          </p>
         </div>
 
-        {/* Read More */}
-        {variant === 'detailed' && (
-          <div 
-            className={`
-              absolute bottom-4 right-4 
-              ${isHovered ? 'opacity-100' : 'opacity-0'}
-              transition-opacity duration-300 
-              flex items-center text-blue-500 
-              hover:text-blue-700
-            `}
-          >
-            <BookOpen className="w-5 h-5 mr-2" />
-            <span className="text-sm font-medium">Read More</span>
-            <ChevronRight className="w-4 h-4 ml-1" />
+        {/* Tags Section */}
+        {post.tags && post.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {post.tags.map(tag => (
+              <div 
+                key={tag}
+                className="flex items-center px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium"
+              >
+                <Hash size={12} className="mr-1" />
+                {tag}
+              </div>
+            ))}
           </div>
         )}
+
+        {/* Footer Section */}
+        <div className="mt-auto flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className={`
+              ${getAuthorColor()}
+              rounded-full flex items-center justify-center
+              font-semibold shadow-sm
+              ${variant === 'compact' ? 'w-8 h-8 text-sm' : 'w-10 h-10'}
+            `}>
+              {post.author.username[0].toUpperCase()}
+            </div>
+            <div className="flex flex-col">
+              <span className="font-medium text-slate-900 text-sm">
+                {post.author.username}
+              </span>
+              <div className="flex items-center text-slate-500 text-xs">
+                <Calendar className="w-3 h-3 mr-1" />
+                <time dateTime={post.createdAt}>
+                  {formatDate()}
+                </time>
+              </div>
+            </div>
+          </div>
+
+          {variant === 'detailed' && (
+            <div className={`
+              flex items-center text-indigo-500
+              ${isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'}
+              transition-all duration-300
+            `}>
+              <BookOpen className="w-4 h-4 mr-1" />
+              <span className="text-sm font-medium">Read More</span>
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
