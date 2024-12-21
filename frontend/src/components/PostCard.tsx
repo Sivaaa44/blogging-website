@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Post } from '../types/post';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Trash2, Edit, BookOpen, Calendar, ChevronRight, Hash, MessageCircle } from 'lucide-react';
+import { Trash2, Edit, BookOpen, Calendar, ChevronRight, Hash } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
 interface PostCardProps {

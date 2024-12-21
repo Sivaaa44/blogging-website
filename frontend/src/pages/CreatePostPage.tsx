@@ -1,23 +1,84 @@
+// import React, { useState, useEffect, useRef } from 'react';
+// import { useNavigate } from 'react-router-dom';
+// import axios from 'axios';
+// import { useAuth } from '../context/AuthContext';
+// import Quill from 'quill';
+// import 'quill/dist/quill.snow.css';
+// import { PenLine, X, Plus, AlertCircle } from 'lucide-react';
+// import DOMPurify from 'dompurify';
+
+// interface CreatePostFormData {
+//   title: string;
+//   content: string;
+//   tags: string[];
+// }
+
+// const CreatePostPage: React.FC = () => {
+//   const [formData, setFormData] = useState<CreatePostFormData>({
+//     title: '',
+//     content: '',
+//     tags: [],
+//   });
+//   const [currentTag, setCurrentTag] = useState('');
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState('');
+//   const navigate = useNavigate();
+//   const { user } = useAuth();
+//   const titleInputRef = useRef<HTMLInputElement>(null);
+//   const quillRef = useRef<any>(null);
+//   const editorRef = useRef<HTMLDivElement>(null);
+
+//   useEffect(() => {
+//     titleInputRef.current?.focus();
+
+//     if (editorRef.current) {
+//       quillRef.current = new Quill(editorRef.current, {
+//         theme: 'snow',
+//         modules: {
+//           toolbar: [
+//             [{ header: [1, 2, 3, false] }],
+//             ['bold', 'italic', 'underline', 'strike'],
+//             [{ 'color': [] }, { 'background': [] }],
+//             ['blockquote', 'code-block'],
+//             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+//             [{ 'align': [] }],
+//             ['link', 'image'],
+//             ['clean']
+//           ],
+//         },
+//         placeholder: 'Start writing your story...',
+//       });
+
+//       quillRef.current.on('text-change', () => {
+//         const content = quillRef.current.root.innerHTML;
+//         setFormData(prev => ({
+//           ...prev,
+//           content: DOMPurify.sanitize(content),
+//         }));
+//       });
+//     }
+
+//     return () => {
+//       if (quillRef.current) {
+//         quillRef.current = null;
+//       }
+//     };
+//   }, []);
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import Quill from 'quill';
 import 'quill/dist/quill.snow.css';
-import { PenLine, X, Plus, AlertCircle } from 'lucide-react';
+import { PenLine, X, Plus, AlertCircle, Image as ImageIcon } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
-interface CreatePostFormData {
-  title: string;
-  content: string;
-  tags: string[];
-}
-
-const CreatePostPage: React.FC = () => {
-  const [formData, setFormData] = useState<CreatePostFormData>({
+const CreatePostPage = () => {
+  const [formData, setFormData] = useState({
     title: '',
     content: '',
-    tags: [],
+    tags: [] as string[],
+    coverImage: '',
   });
   const [currentTag, setCurrentTag] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,25 +93,32 @@ const CreatePostPage: React.FC = () => {
     titleInputRef.current?.focus();
 
     if (editorRef.current) {
-      quillRef.current = new Quill(editorRef.current, {
+      const quill = new Quill(editorRef.current, {
         theme: 'snow',
         modules: {
-          toolbar: [
-            [{ header: [1, 2, 3, false] }],
-            ['bold', 'italic', 'underline', 'strike'],
-            [{ 'color': [] }, { 'background': [] }],
-            ['blockquote', 'code-block'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            [{ 'align': [] }],
-            ['link', 'image'],
-            ['clean']
-          ],
+          toolbar: {
+            container: [
+              [{ header: [1, 2, 3, false] }],
+              ['bold', 'italic', 'underline', 'strike'],
+              [{ color: [] }, { background: [] }],
+              ['blockquote', 'code-block'],
+              [{ list: 'ordered'}, { list: 'bullet' }],
+              [{ align: [] }],
+              ['link', 'image'],
+              ['clean']
+            ],
+            handlers: {
+              image: imageHandler
+            }
+          },
         },
-        placeholder: 'Start writing your story...',
+        placeholder: 'Share your thoughts...',
       });
 
-      quillRef.current.on('text-change', () => {
-        const content = quillRef.current.root.innerHTML;
+      quillRef.current = quill;
+
+      quill.on('text-change', () => {
+        const content = quill.root.innerHTML;
         setFormData(prev => ({
           ...prev,
           content: DOMPurify.sanitize(content),
@@ -64,6 +132,76 @@ const CreatePostPage: React.FC = () => {
       }
     };
   }, []);
+
+  const imageHandler = async () => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+  
+    input.onchange = async () => {
+      const file = input.files?.[0]; 
+  
+      // Check if no file is selected
+      if (!file) {
+        setError('No file selected');
+        return;
+      }
+  
+      // Check if the file is an image
+      if (!file.type.startsWith('image/')) {
+        setError('Please upload a valid image file');
+        return;
+      }
+  
+      const formData = new FormData();
+      formData.append('image', file);
+  
+      try {
+        const response = await axios.post('http://localhost:5000/api/upload-image', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+  
+        // Check if URL is returned in the response
+        if (response.data.url) {
+          const url = response.data.url;
+          const range = quillRef.current.getSelection(true);
+          quillRef.current.insertEmbed(range.index, 'image', url);
+        } else {
+          setError('Image upload failed');
+        }
+      } catch (error) {
+        console.error(error);  // Log the error for debugging purposes
+        setError('Failed to upload image');
+      }
+    };
+  };
+  
+
+  const handleCoverImageUpload = async (e: any) => {
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/upload-image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        coverImage: response.data.url,
+      }));
+    } catch (error) {
+      setError('Failed to upload cover image');
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -136,7 +274,7 @@ const CreatePostPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8">
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="bg-white rounded-xl shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-700 p-8">
+          <div className="bg-gradient-to-r from-slate-800 to-slate-900 p-8">
             <h1 className="text-4xl font-bold text-white text-center flex items-center justify-center">
               <PenLine className="mr-4" size={32} />
               Create Your Story
@@ -151,6 +289,45 @@ const CreatePostPage: React.FC = () => {
               </div>
             )}
 
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-gray-700">Cover Image</label>
+              <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-slate-400 transition-colors">
+                <div className="space-y-1 text-center">
+                  {formData.coverImage ? (
+                    <div className="relative">
+                      <img
+                        src={formData.coverImage}
+                        alt="Cover"
+                        className="max-h-64 rounded-lg"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, coverImage: '' }))}
+                        className="absolute top-2 right-2 p-1 bg-white rounded-full shadow-lg"
+                      >
+                        <X size={16} className="text-gray-600" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center">
+                      <ImageIcon className="mx-auto h-12 w-12 text-gray-400" />
+                      <div className="flex text-sm text-gray-600">
+                        <label className="relative cursor-pointer bg-white rounded-md font-medium text-slate-600 hover:text-slate-800">
+                          <span>Upload a cover image</span>
+                          <input
+                            type="file"
+                            className="sr-only"
+                            accept="image/*"
+                            onChange={handleCoverImageUpload}
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <label htmlFor="title" className="text-sm font-medium text-gray-700">Title</label>
               <input
@@ -162,13 +339,13 @@ const CreatePostPage: React.FC = () => {
                 onChange={handleChange}
                 required
                 placeholder="Give your story a great title"
-                className="w-full text-3xl font-semibold px-4 py-3 border-b-2 border-slate-200 focus:border-indigo-500 outline-none transition duration-300 placeholder-slate-300"
+                className="w-full text-3xl font-semibold px-4 py-3 border-b-2 border-slate-200 focus:border-slate-600 outline-none transition duration-300 placeholder-slate-300"
               />
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Content</label>
-              <div className="bg-white">
+              <div className="bg-white border border-slate-200 rounded-lg">
                 <div ref={editorRef} className="min-h-[400px]" />
               </div>
             </div>

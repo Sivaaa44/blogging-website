@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.tsx
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 import { UserData } from '../types/auth';
 
@@ -10,7 +9,6 @@ interface AuthContextType {
   isAuthenticated: () => boolean;
 }
 
-// Create context with a default value that matches the interface
 const AuthContext = createContext<AuthContextType>({
   user: null,
   token: null,
@@ -52,5 +50,4 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-// Ensure this line is present and uses the exact name 'useAuth'
 export const useAuth = () => useContext(AuthContext);
