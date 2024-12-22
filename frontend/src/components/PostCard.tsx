@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Post } from '../types/post';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Trash2, Edit, BookOpen, Calendar, ChevronRight, Hash } from 'lucide-react';
+import { Trash2, Edit, Calendar, Hash, MoreVertical } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
 interface PostCardProps {
@@ -19,7 +19,18 @@ const PostCard: React.FC<PostCardProps> = ({
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [isHovered, setIsHovered] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [coverImage, setCoverImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Extract first image from post content if exists
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = DOMPurify.sanitize(post.content);
+    const firstImage = tempDiv.querySelector('img');
+    if (firstImage) {
+      setCoverImage(firstImage.src);
+    }
+  }, [post.content]);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -27,19 +38,10 @@ const PostCard: React.FC<PostCardProps> = ({
 
     try {
       const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token not found. Please log in again.');
-      }
-
       await axios.delete(`http://localhost:5000/api/post/${post._id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (onDelete) {
-        onDelete(post._id!);
-      }
+      onDelete?.(post._id!);
     } catch (error: any) {
       console.error('Error deleting post:', error);
       alert(error.response?.data?.error || 'Failed to delete post');
@@ -61,163 +63,148 @@ const PostCard: React.FC<PostCardProps> = ({
       'bg-emerald-100 text-emerald-800', 
       'bg-purple-100 text-purple-800', 
       'bg-rose-100 text-rose-800', 
-      'bg-indigo-100 text-indigo-800', 
-      'bg-amber-100 text-amber-800'
+      'bg-indigo-100 text-indigo-800'
     ];
-    const index = post.author.username.charCodeAt(0) % colors.length;
-    return colors[index];
+    return colors[post.author.username.charCodeAt(0) % colors.length];
   };
 
   const getTruncatedContent = () => {
-    // Create a temporary div to strip HTML tags for length calculation
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = DOMPurify.sanitize(post.content);
     const textContent = tempDiv.textContent || tempDiv.innerText;
-    
-    const maxLength = variant === 'compact' ? 80 : 200;
-    let truncated = textContent.slice(0, maxLength);
-    
-    if (textContent.length > maxLength) {
-      truncated += '...';
-    }
-    
-    return truncated;
+    const maxLength = variant === 'compact' ? 80 : 160;
+    return textContent.length > maxLength 
+      ? textContent.slice(0, maxLength) + '...' 
+      : textContent;
   };
 
   const formatDate = () => {
     const date = new Date(post.createdAt!);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays === 0) return 'Today';
     if (diffDays === 1) return 'Yesterday';
     if (diffDays < 7) return `${diffDays}d ago`;
     
     return date.toLocaleDateString('en-US', {
       month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+      day: 'numeric'
     });
   };
 
   return (
     <div 
-      className={`
-        group relative overflow-hidden rounded-2xl
-        transition-all duration-300 ease-out
-        ${variant === 'compact' ? 'h-48' : 'h-[420px]'}
-        bg-white border border-slate-200
-        hover:border-slate-300 hover:shadow-lg
-        cursor-pointer
-      `}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      className="group relative bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-slate-200"
       onClick={handleCardClick}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-slate-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-      <div className="relative h-full p-6 flex flex-col">
-        {/* Header Section */}
-        <div className="flex justify-between items-start space-x-4 mb-4">
-          <div className="flex-1">
-            <h2 className={`
-              font-bold text-slate-900 
-              group-hover:text-indigo-600 
-              transition-colors duration-300
-              ${variant === 'compact' ? 'text-lg' : 'text-2xl'}
-              line-clamp-2
-            `}>
-              {post.title}
-            </h2>
+      {/* Image Section */}
+      <div className="aspect-[16/9] overflow-hidden bg-slate-100">
+        {coverImage ? (
+          <img 
+            src={coverImage} 
+            alt={post.title}
+            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+            <svg 
+              className="w-12 h-12 text-slate-300"
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
           </div>
+        )}
+      </div>
 
-          {user && user.username === post.author.username && (
-            <div className={`
-              flex space-x-2 
-              ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}
-              transition-all duration-300
-            `}>
-              <button
-                onClick={handleDelete}
-                className="p-2 rounded-full bg-rose-50 text-rose-500 hover:bg-rose-100 hover:text-rose-600 transition-colors"
-                title="Delete Post"
-              >
-                <Trash2 size={18} />
-              </button>
-              <button
-                onClick={handleEdit}
-                className="p-2 rounded-full bg-indigo-50 text-indigo-500 hover:bg-indigo-100 hover:text-indigo-600 transition-colors"
-                title="Edit Post"
-              >
-                <Edit size={18} />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Content Preview */}
-        <div className="mb-4 flex-1">
-          <p className={`
-            text-slate-600
-            ${variant === 'compact' ? 'text-sm line-clamp-2' : 'text-base line-clamp-4'}
-          `}>
-            {getTruncatedContent()}
-          </p>
-        </div>
-
-        {/* Tags Section */}
+      {/* Content Section */}
+      <div className="p-5">
+        {/* Tags */}
         {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {post.tags.map(tag => (
-              <div 
+          <div className="flex flex-wrap gap-2 mb-3">
+            {post.tags.slice(0, 3).map(tag => (
+              <span 
                 key={tag}
-                className="flex items-center px-2 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-medium"
+                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-600"
               >
-                <Hash size={12} className="mr-1" />
+                <Hash size={10} className="mr-1" />
                 {tag}
-              </div>
+              </span>
             ))}
+            {post.tags.length > 3 && (
+              <span className="text-xs text-slate-500">
+                +{post.tags.length - 3} more
+              </span>
+            )}
           </div>
         )}
 
-        {/* Footer Section */}
-        <div className="mt-auto flex items-center justify-between">
+        {/* Title */}
+        <h2 className="text-xl font-semibold text-slate-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
+          {post.title}
+        </h2>
+
+        {/* Preview Text */}
+        <p className="text-slate-600 text-sm line-clamp-2 mb-4">
+          {getTruncatedContent()}
+        </p>
+
+        {/* Author and Actions Footer */}
+        <div className="flex items-center justify-between pt-4 border-t border-slate-100">
           <div className="flex items-center space-x-3">
-            <div className={`
-              ${getAuthorColor()}
-              rounded-full flex items-center justify-center
-              font-semibold shadow-sm
-              ${variant === 'compact' ? 'w-8 h-8 text-sm' : 'w-10 h-10'}
-            `}>
+            <div className={`${getAuthorColor()} w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm`}>
               {post.author.username[0].toUpperCase()}
             </div>
-            <div className="flex flex-col">
-              <span className="font-medium text-slate-900 text-sm">
+            <div>
+              <div className="text-sm font-medium text-slate-900">
                 {post.author.username}
-              </span>
-              <div className="flex items-center text-slate-500 text-xs">
-                <Calendar className="w-3 h-3 mr-1" />
-                <time dateTime={post.createdAt}>
-                  {formatDate()}
-                </time>
+              </div>
+              <div className="flex items-center text-xs text-slate-500">
+                <Calendar size={12} className="mr-1" />
+                {formatDate()}
               </div>
             </div>
           </div>
 
-          {variant === 'detailed' && (
-            <div className={`
-              flex items-center text-indigo-500
-              ${isHovered ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'}
-              transition-all duration-300
-            `}>
-              <BookOpen className="w-4 h-4 mr-1" />
-              <span className="text-sm font-medium">Read More</span>
-              <ChevronRight className="w-4 h-4 ml-1" />
+          {user && user.username === post.author.username && (
+            <div className="relative">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMenuOpen(!isMenuOpen);
+                }}
+                className="p-2 hover:bg-slate-50 rounded-full transition-colors"
+              >
+                <MoreVertical size={16} className="text-slate-500" />
+              </button>
+
+              {isMenuOpen && (
+                <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10">
+                  <button
+                    onClick={handleEdit}
+                    className="w-full px-4 py-2 text-sm text-left text-slate-700 hover:bg-slate-50 flex items-center"
+                  >
+                    <Edit size={14} className="mr-2" />
+                    Edit
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-slate-50 flex items-center"
+                  >
+                    <Trash2 size={14} className="mr-2" />
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

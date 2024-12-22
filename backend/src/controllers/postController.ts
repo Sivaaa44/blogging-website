@@ -1,5 +1,24 @@
 import {Request,Response} from "express";
 import Post from "../models/Post";
+import {v2 as cloudinary} from "cloudinary";
+import multer from 'multer'
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+
+const storage = new CloudinaryStorage({
+    cloudinary : cloudinary,
+    params : {
+        folder : 'blog_posts',
+        allowedFormats : ['jpg', 'png', 'jpeg'],
+        transformation : [{ width : 1000, crop  : "limit"}]
+    }as any
+})
+
 
 export const createPost = async (req : any, res : Response)=>{
     const {title, content, published, tags} = req.body;
@@ -136,4 +155,24 @@ export const getPostByUser = async(req: any, res: Response) => {
         console.error('Error fetching posts:', error);
         res.status(500).json({ error: 'Failed to fetch posts' });
       }
+}
+
+export const uploadImage = async(req : any, res : Response): Promise<void> => {
+    try{
+        if(!req.file){
+            res.status(400).json({msg : "no image file provided"});
+            return;
+        }
+
+        const imageUrl = req.file.path;
+        
+        res.json({
+            url : imageUrl,
+            msg : "image uploaded successfully",
+        })
+
+    }catch(error){
+        console.error("image upload error", error);
+        res.status(500).json({ error: 'Failed to upload image' });
+    }
 }

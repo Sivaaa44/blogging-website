@@ -1,69 +1,3 @@
-// import React, { useState, useEffect, useRef } from 'react';
-// import { useNavigate } from 'react-router-dom';
-// import axios from 'axios';
-// import { useAuth } from '../context/AuthContext';
-// import Quill from 'quill';
-// import 'quill/dist/quill.snow.css';
-// import { PenLine, X, Plus, AlertCircle } from 'lucide-react';
-// import DOMPurify from 'dompurify';
-
-// interface CreatePostFormData {
-//   title: string;
-//   content: string;
-//   tags: string[];
-// }
-
-// const CreatePostPage: React.FC = () => {
-//   const [formData, setFormData] = useState<CreatePostFormData>({
-//     title: '',
-//     content: '',
-//     tags: [],
-//   });
-//   const [currentTag, setCurrentTag] = useState('');
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState('');
-//   const navigate = useNavigate();
-//   const { user } = useAuth();
-//   const titleInputRef = useRef<HTMLInputElement>(null);
-//   const quillRef = useRef<any>(null);
-//   const editorRef = useRef<HTMLDivElement>(null);
-
-//   useEffect(() => {
-//     titleInputRef.current?.focus();
-
-//     if (editorRef.current) {
-//       quillRef.current = new Quill(editorRef.current, {
-//         theme: 'snow',
-//         modules: {
-//           toolbar: [
-//             [{ header: [1, 2, 3, false] }],
-//             ['bold', 'italic', 'underline', 'strike'],
-//             [{ 'color': [] }, { 'background': [] }],
-//             ['blockquote', 'code-block'],
-//             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-//             [{ 'align': [] }],
-//             ['link', 'image'],
-//             ['clean']
-//           ],
-//         },
-//         placeholder: 'Start writing your story...',
-//       });
-
-//       quillRef.current.on('text-change', () => {
-//         const content = quillRef.current.root.innerHTML;
-//         setFormData(prev => ({
-//           ...prev,
-//           content: DOMPurify.sanitize(content),
-//         }));
-//       });
-//     }
-
-//     return () => {
-//       if (quillRef.current) {
-//         quillRef.current = null;
-//       }
-//     };
-//   }, []);
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -140,42 +74,45 @@ const CreatePostPage = () => {
     input.click();
   
     input.onchange = async () => {
-      const file = input.files?.[0]; 
+      const file = input.files?.[0];
+      if (!file) return;
   
-      // Check if no file is selected
-      if (!file) {
-        setError('No file selected');
-        return;
-      }
-  
-      // Check if the file is an image
-      if (!file.type.startsWith('image/')) {
-        setError('Please upload a valid image file');
-        return;
-      }
+      // Show loading state in editor
+      const range = quillRef.current.getSelection(true);
+      quillRef.current.insertText(range.index, 'Uploading image...', {
+        'color': '#999',
+        'italic': true,
+      }, true);
   
       const formData = new FormData();
       formData.append('image', file);
   
       try {
-        const response = await axios.post('http://localhost:5000/api/upload-image', formData, {
+        const response = await axios.post('http://localhost:5000/api/post/upload-image', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
         });
   
-        // Check if URL is returned in the response
-        if (response.data.url) {
-          const url = response.data.url;
-          const range = quillRef.current.getSelection(true);
-          quillRef.current.insertEmbed(range.index, 'image', url);
-        } else {
-          setError('Image upload failed');
-        }
+        // Remove the placeholder text
+        quillRef.current.deleteText(range.index, 'Uploading image...'.length);
+        
+        // Insert the uploaded image
+        quillRef.current.insertEmbed(range.index, 'image', response.data.url);
       } catch (error) {
-        console.error(error);  // Log the error for debugging purposes
-        setError('Failed to upload image');
+        // Remove the placeholder text
+        quillRef.current.deleteText(range.index, 'Uploading image...'.length);
+        
+        // Show error message in editor
+        quillRef.current.insertText(range.index, 'Failed to upload image', {
+          'color': '#e53e3e',
+          'italic': true,
+        }, true);
+        
+        setTimeout(() => {
+          quillRef.current.deleteText(range.index, 'Failed to upload image'.length);
+        }, 3000);
       }
     };
   };
@@ -187,7 +124,7 @@ const CreatePostPage = () => {
     formData.append('image', file);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/upload-image', formData, {
+      const response = await axios.post('http://localhost:5000/api/post/upload-image', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
