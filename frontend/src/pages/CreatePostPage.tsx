@@ -189,6 +189,7 @@ const CreatePostPage = () => {
         title: formData.title,
         content: processedContent,
         tags: formData.tags,
+        coverImage: formData.coverImage,
         author: {
           id: user!.id,
           username: user!.username,

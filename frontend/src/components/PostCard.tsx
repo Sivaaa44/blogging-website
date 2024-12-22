@@ -24,13 +24,17 @@ const PostCard: React.FC<PostCardProps> = ({
 
   useEffect(() => {
     // Extract first image from post content if exists
+    if(post.coverImage){
+      setCoverImage(post.coverImage);
+      return;
+    }
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = DOMPurify.sanitize(post.content);
     const firstImage = tempDiv.querySelector('img');
     if (firstImage) {
       setCoverImage(firstImage.src);
     }
-  }, [post.content]);
+  }, [post.content, post.coverImage]);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();

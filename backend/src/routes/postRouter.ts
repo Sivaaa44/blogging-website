@@ -7,6 +7,8 @@ import upload from '../config/multerConfig';
 
 const postRouter = Router();
 
+
+postRouter.post('/upload-image', authMiddleware,upload.single('image'),uploadImage);
 postRouter.post('/', authMiddleware, createPost);
 postRouter.get('/', getAllPosts);
 postRouter.get('/:id', getPostById);
@@ -16,7 +18,6 @@ postRouter.get('/tags/:tag', authMiddleware, getPostByTag);
 postRouter.get('/tags', getAllPosts);
 postRouter.get('/search/:query', searchPost);
 postRouter.get('/user/posts/:userID', authMiddleware, getPostByUser);
-postRouter.post('/upload-image', authMiddleware,upload.single('image'),uploadImage);
 
 
 

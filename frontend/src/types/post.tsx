@@ -7,6 +7,7 @@ export interface Post {
     createdAt?: string; // Optional, timestamp for when the post was created
     updatedAt?: string; // Optional, timestamp for when the post was last updated
     published: boolean; // Indicates if the post is published
+    coverImage? : string
   }
   
 export interface Author {
