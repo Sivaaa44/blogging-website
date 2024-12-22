@@ -16,27 +16,21 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
 
-  // Debounce Effect
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedQuery(searchQuery);
     }, 500);
-
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
-  // Fetch Posts based on debouncedQuery
   useEffect(() => {
     const fetchPosts = async () => {
       setLoading(true);
       setError('');
-
       try {
-        const endpoint =
-          debouncedQuery.trim() === ''
-            ? 'http://localhost:5000/api/post'
-            : `http://localhost:5000/api/post/search/${encodeURIComponent(debouncedQuery)}`;
-
+        const endpoint = debouncedQuery.trim() === ''
+          ? 'http://localhost:5000/api/post'
+          : `http://localhost:5000/api/post/search/${encodeURIComponent(debouncedQuery)}`;
         const response = await axios.get(endpoint);
         setPosts(response.data);
       } catch (err: any) {
@@ -45,7 +39,6 @@ const HomePage: React.FC = () => {
         setLoading(false);
       }
     };
-
     fetchPosts();
   }, [debouncedQuery]);
 
@@ -58,19 +51,29 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-black text-green-400 relative overflow-hidden">
+      {/* Scanlines overlay */}
+      <div className="pointer-events-none fixed inset-0 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px] animate-scanlines" />
+      
+      {/* CRT flicker effect */}
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,255,0,0.1)_0%,rgba(0,0,0,0.1)_100%)] animate-crt" />
+
+      <div className="max-w-7xl mx-auto p-8 relative">
         <div className="flex flex-col md:flex-row justify-between items-center mb-8 space-y-4 md:space-y-0">
-          <h1 className="text-3xl font-extrabold text-gray-900">Skibidi re blogs</h1>
+          <h1 className="text-4xl font-bold text-green-400 animate-glow tracking-wider">
+            SKIBIDI_RE_BLOGS
+          </h1>
+          
           <div className="flex items-center space-x-4">
             {isAuthenticated() && (
               <>
                 <button
-                  className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors flex items-center space-x-2"
+                  className="bg-green-900 hover:bg-green-800 text-green-400 py-2 px-4 border border-green-400 
+                           hover:animate-pulse transition-all duration-300 flex items-center space-x-2"
                   onClick={() => navigate('/create-post')}
                 >
                   <Plus size={20} />
-                  <span>Create Post</span>
+                  <span>NEW_POST</span>
                 </button>
                 {user && <ProfileDropdown user={user} />}
               </>
@@ -79,50 +82,104 @@ const HomePage: React.FC = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="mb-8">
-          <div className="relative">
+        <div className="mb-8 relative">
+          <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="text-gray-400" size={20} />
+              <Search className="text-green-400" size={20} />
             </div>
             <input
               type="text"
-              placeholder="Search posts by title, content, or tags..."
+              placeholder="SEARCH//"
               value={searchQuery}
               onChange={handleSearchChange}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+              className="w-full pl-10 pr-4 py-3 bg-black border-2 border-green-400 text-green-400 
+                       placeholder:text-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 
+                       transition-all duration-300 hover:shadow-[0_0_15px_rgba(0,255,0,0.3)]"
             />
           </div>
         </div>
 
-        {/* Display Posts */}
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-        ) : error ? (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg flex items-center">
-            <AlertTriangle className="mr-2" size={24} />
-            {error}
-          </div>
-        ) : posts.length === 0 ? (
-          <div className="text-center text-gray-500 py-12">
-            <Search size={48} className="mx-auto mb-4 text-gray-300" />
-            <p className="text-xl">No posts found. Try a different search term.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.map((post) => (
-              <PostCard 
-                key={post._id} 
-                post={post} 
-                onDelete={handleDelete}
-              />
-            ))}
-          </div>
-        )}
+        {/* Content Area */}
+        <div className="relative">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-terminal text-2xl">_LOADING...</div>
+            </div>
+          ) : error ? (
+            <div className="border-2 border-red-500 text-red-500 p-4 flex items-center">
+              <AlertTriangle className="mr-2" size={24} />
+              ERROR: {error}
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-12">
+              <Search size={48} className="mx-auto mb-4 text-green-400" />
+              <p className="text-xl">NO_POSTS_FOUND</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {posts.map((post, index) => (
+                <div key={post._id} 
+                     className="opacity-0 animate-fadeIn"
+                     style={{ animationDelay: `${index * 150}ms` }}>
+                  <PostCard post={post} onDelete={handleDelete} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 };
+
+// Add custom styles to your app's global CSS file
+const styles = `
+  @keyframes scanlines {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(4px); }
+  }
+
+  @keyframes crt {
+    0% { opacity: 0.9; }
+    50% { opacity: 1; }
+    100% { opacity: 0.9; }
+  }
+
+  @keyframes glow {
+    0% { text-shadow: 0 0 5px rgba(0,255,0,0.5); }
+    50% { text-shadow: 0 0 20px rgba(0,255,0,0.8); }
+    100% { text-shadow: 0 0 5px rgba(0,255,0,0.5); }
+  }
+
+  @keyframes terminal {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .animate-scanlines {
+    animation: scanlines 1s linear infinite;
+  }
+
+  .animate-crt {
+    animation: crt 0.1s infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
+  }
+
+  .animate-terminal {
+    animation: terminal 1s step-end infinite;
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+`;
 
 export default HomePage;

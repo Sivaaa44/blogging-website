@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Post } from '../types/post';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
-import { Trash2, Edit, Calendar, Hash, MoreVertical } from 'lucide-react';
+import { Trash2, Edit, Calendar, Hash, Power, Terminal } from 'lucide-react';
 import DOMPurify from 'dompurify';
 
 interface PostCardProps {
@@ -20,10 +20,11 @@ const PostCard: React.FC<PostCardProps> = ({
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [isGlitching, setIsGlitching] = useState(false);
 
   useEffect(() => {
-    // Extract first image from post content if exists
     if(post.coverImage){
       setCoverImage(post.coverImage);
       return;
@@ -38,7 +39,11 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this post?')) return;
+    setIsGlitching(true);
+    if (!window.confirm('CONFIRM_DELETE_SEQUENCE?')) {
+      setIsGlitching(false);
+      return;
+    }
 
     try {
       const token = localStorage.getItem('token');
@@ -48,7 +53,7 @@ const PostCard: React.FC<PostCardProps> = ({
       onDelete?.(post._id!);
     } catch (error: any) {
       console.error('Error deleting post:', error);
-      alert(error.response?.data?.error || 'Failed to delete post');
+      alert(error.response?.data?.error || 'DELETION_SEQUENCE_FAILED');
     }
   };
 
@@ -58,18 +63,10 @@ const PostCard: React.FC<PostCardProps> = ({
   };
 
   const handleCardClick = () => {
-    navigate(`/post/${post._id}`);
-  };
-
-  const getAuthorColor = () => {
-    const colors = [
-      'bg-blue-100 text-blue-800', 
-      'bg-emerald-100 text-emerald-800', 
-      'bg-purple-100 text-purple-800', 
-      'bg-rose-100 text-rose-800', 
-      'bg-indigo-100 text-indigo-800'
-    ];
-    return colors[post.author.username.charCodeAt(0) % colors.length];
+    setIsGlitching(true);
+    setTimeout(() => {
+      navigate(`/post/${post._id}`);
+    }, 500);
   };
 
   const getTruncatedContent = () => {
@@ -84,95 +81,96 @@ const PostCard: React.FC<PostCardProps> = ({
 
   const formatDate = () => {
     const date = new Date(post.createdAt!);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays}d ago`;
-    
     return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
+      month: '2-digit',
+      day: '2-digit',
+      year: '2-digit'
+    }).replace(/\//g, '.');
   };
 
   return (
     <div 
-      className="group relative bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-slate-200"
+      className={`group relative border-2 border-green-400 bg-black rounded-none overflow-hidden
+                 transition-all duration-300 cursor-pointer
+                 ${isGlitching ? 'animate-glitch' : ''}
+                 hover:shadow-[0_0_20px_rgba(0,255,0,0.3)]`}
       onClick={handleCardClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Scanline overlay */}
+      <div className="absolute inset-0 pointer-events-none bg-scanlines opacity-10" />
+      
       {/* Image Section */}
-      <div className="aspect-[16/9] overflow-hidden bg-slate-100">
+      <div className="aspect-[16/9] overflow-hidden relative">
+        <div className={`absolute inset-0 bg-green-400 opacity-20 transition-opacity duration-300
+                      ${isHovered ? 'opacity-40' : 'opacity-20'}`} />
         {coverImage ? (
           <img 
             src={coverImage} 
             alt={post.title}
-            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
+            className={`w-full h-full object-cover transition-all duration-500
+                       ${isHovered ? 'scale-110 saturate-50' : 'scale-100'}
+                       filter contrast-125 brightness-75`}
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-            <svg 
-              className="w-12 h-12 text-slate-300"
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={1.5}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
+          <div className="w-full h-full bg-black flex items-center justify-center">
+            <Terminal 
+              size={48}
+              className={`text-green-400 transition-all duration-300
+                         ${isHovered ? 'scale-110' : 'scale-100'}`}
+            />
           </div>
         )}
       </div>
 
       {/* Content Section */}
-      <div className="p-5">
+      <div className="p-5 border-t-2 border-green-400">
         {/* Tags */}
         {post.tags && post.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
             {post.tags.slice(0, 3).map(tag => (
               <span 
                 key={tag}
-                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-600"
+                className="inline-flex items-center px-2 py-1 text-xs font-mono
+                         border border-green-400 text-green-400"
               >
                 <Hash size={10} className="mr-1" />
-                {tag}
+                {tag.toUpperCase()}
               </span>
             ))}
             {post.tags.length > 3 && (
-              <span className="text-xs text-slate-500">
-                +{post.tags.length - 3} more
+              <span className="text-xs text-green-400 font-mono">
+                +{post.tags.length - 3}_MORE
               </span>
             )}
           </div>
         )}
 
         {/* Title */}
-        <h2 className="text-xl font-semibold text-slate-900 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
-          {post.title}
+        <h2 className={`text-xl font-bold font-mono text-green-400 mb-2
+                     transition-all duration-300 ${isHovered ? 'animate-pulse' : ''}`}>
+          {post.title.toUpperCase()}
         </h2>
 
         {/* Preview Text */}
-        <p className="text-slate-600 text-sm line-clamp-2 mb-4">
+        <p className="text-green-400 text-sm font-mono opacity-80 mb-4">
           {getTruncatedContent()}
         </p>
 
         {/* Author and Actions Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+        <div className="flex items-center justify-between pt-4 border-t border-green-400">
           <div className="flex items-center space-x-3">
-            <div className={`${getAuthorColor()} w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm`}>
-              {post.author.username[0].toUpperCase()}
+            <div className="w-8 h-8 border-2 border-green-400 flex items-center justify-center">
+              <span className="text-green-400 font-mono">
+                {post.author.username[0].toUpperCase()}
+              </span>
             </div>
             <div>
-              <div className="text-sm font-medium text-slate-900">
-                {post.author.username}
+              <div className="text-sm font-mono text-green-400">
+                {post.author.username.toUpperCase()}
               </div>
-              <div className="flex items-center text-xs text-slate-500">
+              <div className="flex items-center text-xs text-green-400 opacity-80 font-mono">
                 <Calendar size={12} className="mr-1" />
                 {formatDate()}
               </div>
@@ -180,35 +178,21 @@ const PostCard: React.FC<PostCardProps> = ({
           </div>
 
           {user && user.username === post.author.username && (
-            <div className="relative">
+            <div className="flex space-x-2">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsMenuOpen(!isMenuOpen);
-                }}
-                className="p-2 hover:bg-slate-50 rounded-full transition-colors"
+                onClick={handleEdit}
+                className="p-2 border border-green-400 hover:bg-green-400 hover:text-black
+                         transition-all duration-300 group"
               >
-                <MoreVertical size={16} className="text-slate-500" />
+                <Edit size={16} />
               </button>
-
-              {isMenuOpen && (
-                <div className="absolute right-0 mt-1 w-32 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-10">
-                  <button
-                    onClick={handleEdit}
-                    className="w-full px-4 py-2 text-sm text-left text-slate-700 hover:bg-slate-50 flex items-center"
-                  >
-                    <Edit size={14} className="mr-2" />
-                    Edit
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-slate-50 flex items-center"
-                  >
-                    <Trash2 size={14} className="mr-2" />
-                    Delete
-                  </button>
-                </div>
-              )}
+              <button
+                onClick={handleDelete}
+                className="p-2 border border-red-500 hover:bg-red-500 hover:text-black
+                         transition-all duration-300 text-red-500"
+              >
+                <Trash2 size={16} />
+              </button>
             </div>
           )}
         </div>
@@ -216,5 +200,8 @@ const PostCard: React.FC<PostCardProps> = ({
     </div>
   );
 };
+
+// Add these animations to your global CSS
+
 
 export default PostCard;
