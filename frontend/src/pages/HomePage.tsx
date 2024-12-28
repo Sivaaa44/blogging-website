@@ -133,53 +133,6 @@ const HomePage: React.FC = () => {
 };
 
 // Add custom styles to your app's global CSS file
-const styles = `
-  @keyframes scanlines {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(4px); }
-  }
 
-  @keyframes crt {
-    0% { opacity: 0.9; }
-    50% { opacity: 1; }
-    100% { opacity: 0.9; }
-  }
-
-  @keyframes glow {
-    0% { text-shadow: 0 0 5px rgba(0,255,0,0.5); }
-    50% { text-shadow: 0 0 20px rgba(0,255,0,0.8); }
-    100% { text-shadow: 0 0 5px rgba(0,255,0,0.5); }
-  }
-
-  @keyframes terminal {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .animate-scanlines {
-    animation: scanlines 1s linear infinite;
-  }
-
-  .animate-crt {
-    animation: crt 0.1s infinite;
-  }
-
-  .animate-glow {
-    animation: glow 2s ease-in-out infinite;
-  }
-
-  .animate-terminal {
-    animation: terminal 1s step-end infinite;
-  }
-
-  .animate-fadeIn {
-    animation: fadeIn 0.5s ease-out forwards;
-  }
-`;
 
 export default HomePage;
